@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Guide - CertifyChain{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <h1 class="text-center mb-5">User Guide</h1>
+        
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3>How to Use CertifyChain</h3>
+                        <p>Welcome to the CertifyChain user guide. Follow these steps to generate and verify refugee certificates.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Step 1: Login as Issuer</h4>
+                        <p>Access the admin panel by clicking on "Login" in the navigation menu. Use your credentials to log in.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Step 2: Generate a Certificate</h4>
+                        <p>Navigate to "Generate Certificate" and fill in the refugee's details:</p>
+                        <ul>
+                            <li>Recipient Address (Ethereum wallet address)</li>
+                            <li>Refugee Name</li>
+                            <li>Country of Origin</li>
+                            <li>Date of Birth</li>
+                            <li>Address</li>
+                            <li>Gender</li>
+                            <li>Validity Period</li>
+                        </ul>
+                        <p>Click "Submit" to issue the certificate on the blockchain.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Step 3: Verify a Certificate</h4>
+                        <p>Anyone can verify a certificate by entering the Certificate ID on the homepage. The system will check both the database and the blockchain.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h4>Step 4: Download PDF</h4>
+                        <p>After generating a certificate, you can download a PDF version with a QR code for easy verification.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Roadmap</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card h-100 border-primary">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">Phase 1: Foundation</h5>
+                        <ul>
+                            <li>Django Backend Setup</li>
+                            <li>Smart Contract Development</li>
+                            <li>Basic Certificate Issuance</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-success">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">Phase 2: Enhancement</h5>
+                        <ul>
+                            <li>PDF Generation with QR Codes</li>
+                            <li>User Authentication</li>
+                            <li>Blockchain Integration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-info">
+                    <div class="card-body">
+                        <h5 class="card-title text-info">Phase 3: Expansion</h5>
+                        <ul>
+                            <li>Multi-language Support</li>
+                            <li>Mobile Application</li>
+                            <li>UNHCR Integration</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

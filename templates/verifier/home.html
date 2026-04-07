@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - CertifyChain{% endblock %}
+
+{% block content %}
+<section class="hero-section bg-light py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Blockchain-Based Certificate System for Refugees</h1>
+                <p class="lead">Secure, tamper-proof, and easily verifiable digital certificates for refugees. Our blockchain technology ensures authenticity and prevents fraud.</p>
+                <a href="{% url 'issue_certificate' %}" class="btn btn-primary btn-lg">Generate Certificate</a>
+            </div>
+            <div class="col-lg-6">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h3 class="card-title text-center mb-4">Verify Certificate</h3>
+                        <form method="POST" action="/">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="certificate_id" class="form-label">Enter Certificate ID</label>
+                                <input type="text" class="form-control" id="certificate_id" name="certificate_id" placeholder="e.g., REF-PRI-1234567890" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Verify</button>
+                        </form>
+                        
+                        {% if verified is not None %}
+                        <div class="mt-3 alert {% if verified %}alert-success{% else %}alert-danger{% endif %}">
+                            {% if verified %}
+                                <strong>Certificate Verified!</strong>
+                                {% if certificate %}
+                                <p class="mb-0">Certificate ID: {{ certificate.certificate_id }}</p>
+                                <p class="mb-0">Refugee Name: {{ certificate.refugee_name }}</p>
+                                <p class="mb-0">Country: {{ certificate.country_name }}</p>
+                                {% endif %}
+                            {% else %}
+                                <strong>Certificate Not Found!</strong>
+                                <p class="mb-0">The certificate ID entered does not exist in our system.</p>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="features py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Key Features</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Immutability</h5>
+                        <p class="card-text">Once issued, certificates cannot be altered or forged. Blockchain ensures complete integrity.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Decentralized Verification</h5>
+                        <p class="card-text">Anyone can verify certificate authenticity without relying on a central authority.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">Security</h5>
+                        <p class="card-text">Cryptographic guarantees prevent unauthorized modifications to certificates.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="how-it-works py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <div class="step-icon mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                    </svg>
+                </div>
+                <h4>1. Create Certificate</h4>
+                <p>Authorized issuers create digital certificates for refugees with all required details.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="step-icon mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                        <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                        <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243L6.586 4.672z"/>
+                    </svg>
+                </div>
+                <h4>2. Store on Blockchain</h4>
+                <p>Certificates are cryptographically stored on the Ethereum blockchain for permanent verification.</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="step-icon mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                        <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                </div>
+                <h4>3. Verify Anywhere</h4>
+                <p>Anyone can verify the authenticity of certificates using the certificate ID.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

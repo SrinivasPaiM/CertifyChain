@@ -1,0 +1,5 @@
+django>=5.0
+web3>=6.0
+qrcode>=7.0
+reportlab>=4.0
+pillow>=10.0
