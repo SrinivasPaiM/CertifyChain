@@ -1,0 +1,79 @@
+{% extends 'enhanced/base_enhanced.html' %}
+
+{% block title %}Request Service - CertifyChain SSI{% endblock %}
+
+{% block content %}
+<section class="hero-gradient p-4 p-md-5 mb-4 fade-in-up">
+    <h1 class="display-6 fw-bold mb-2">Service Request Portal</h1>
+    <p class="mb-0 opacity-75">Create a verifiable presentation request based on DID and target service.</p>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel p-4 fade-in-up">
+            <form id="requestForm">
+                <div class="mb-3">
+                    <label class="form-label">Certificate ID</label>
+                    <input type="text" class="form-control" name="certificate_id" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Service Type</label>
+                    <select class="form-select" name="service_type">
+                        <option value="healthcare">Healthcare</option>
+                        <option value="education">Education</option>
+                        <option value="employment">Employment</option>
+                        <option value="housing">Housing</option>
+                    </select>
+                </div>
+                <button class="btn btn-brand w-100" type="submit">Generate Service Request</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel p-4 fade-in-up" id="requestResult">
+            <div class="text-muted">Submit details to generate verifiable presentation requirements.</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const requestForm = document.getElementById('requestForm');
+    const requestResult = document.getElementById('requestResult');
+
+    const params = new URLSearchParams(window.location.search);
+    const cert = params.get('certificate_id');
+    const stype = params.get('service_type');
+    if (cert) requestForm.querySelector('input[name="certificate_id"]').value = cert;
+    if (stype) requestForm.querySelector('select[name="service_type"]').value = stype;
+
+    requestForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = Object.fromEntries(new FormData(requestForm));
+        requestResult.innerHTML = '<div class="alert alert-info">Building request...</div>';
+
+        try {
+            const response = await fetch('{% url "request_service" %}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+
+            if (!response.ok || result.error) {
+                requestResult.innerHTML = '<div class="alert alert-danger">' + (result.message || 'Unable to create request') + '</div>';
+                return;
+            }
+
+            let html = '<div class="alert alert-success"><strong>Service request created</strong></div>';
+            html += '<p><strong>DID:</strong> <code>' + result.did + '</code></p>';
+            html += '<p><strong>Claims requested:</strong> ' + (result.presentation.claims_requested || []).join(', ') + '</p>';
+            html += '<a class="btn btn-brand" href="{% url "verify_eligibility" %}">Open Verifier Page</a>';
+            requestResult.innerHTML = html;
+        } catch (err) {
+            requestResult.innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
+        }
+    });
+</script>
+{% endblock %}

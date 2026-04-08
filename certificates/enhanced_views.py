@@ -12,6 +12,7 @@ import hashlib
 import os
 import time
 from enum import Enum
+from .ai_decision_engine import AIServiceDecisionEngine
 
 
 class ServiceType(Enum):
@@ -21,6 +22,9 @@ class ServiceType(Enum):
     HOUSING = 3
     LEGAL_AID = 4
     FOOD_ASSISTANCE = 5
+
+
+AI_ENGINE = AIServiceDecisionEngine()
 
 
 def index(request):
@@ -153,6 +157,10 @@ def service_matching(request):
             data = request.POST.dict()
         
         certificate_id = data.get('certificate_id', '')
+        try:
+            top_k = int(data.get('top_k', 5))
+        except (TypeError, ValueError):
+            top_k = 5
         
         # Find certificate
         try:
@@ -172,69 +180,33 @@ def service_matching(request):
             }
         )
         
-        # Get profile data from certificate (entered in form)
-        import datetime
-        try:
-            age = (datetime.date.today() - cert.date_of_birth).days // 365
-        except:
-            age = 25
-        
-        # Get actual values from certificate
-        employment = 0 if cert.employment_status == 'unemployed' else (1 if cert.employment_status == 'employed' else 2)
-        has_children = cert.has_children
-        family_size = cert.family_size
-        time_arrival = cert.time_since_arrival
-        education = 2  # Default, can be enhanced
-        skills = cert.skills if cert.skills else ""
-        
-        services = [
-            {"id": "health_001", "name": "Basic Healthcare Coverage", "type": "HEALTHCARE", "min_age": 0},
-            {"id": "edu_001", "name": "Primary Education Access", "type": "EDUCATION", "min_age": 5},
-            {"id": "edu_002", "name": "University Scholarship Program", "type": "EDUCATION", "min_age": 18},
-            {"id": "emp_001", "name": "Vocational Training Program", "type": "EMPLOYMENT", "min_age": 18},
-            {"id": "emp_002", "name": "Job Placement Services", "type": "EMPLOYMENT", "min_age": 18},
-            {"id": "hous_001", "name": "Emergency Housing Assistance", "type": "HOUSING", "min_age": 0},
-        ]
-        
-        eligible = []
-        for s in services:
-            score = 50
-            if age >= s["min_age"]:
-                score += 20
-            if education >= 1:
-                score += 15
-            if has_children and s["type"] in ["EDUCATION", "HEALTHCARE"]:
-                score += 15
-            if employment == 0 and s["type"] == "EMPLOYMENT":
-                score += 10
-            if time_arrival < 3 and s["type"] == "HOUSING":
-                score += 10
-                
-            if score >= 50:
-                eligible.append({
-                    "service_id": s["id"],
-                    "service_name": s["name"],
-                    "service_type": s["type"],
-                    "eligibility_score": min(score, 100),
-                    "action_required": "Apply" if score >= 70 else "Contact for info"
-                })
-        
-        eligible.sort(key=lambda x: x["eligibility_score"], reverse=True)
-        
+        ai_result = AI_ENGINE.recommend(cert, top_k=top_k)
+
+        for rec in ai_result["recommendations"]:
+            ServiceEligibility.objects.update_or_create(
+                refugee=profile,
+                service_name=rec["service_name"],
+                defaults={
+                    "service_type": rec["service_type"],
+                    "eligibility_score": rec["eligibility_score"],
+                    "documents_required": rec["documents_required"],
+                },
+            )
+
         return JsonResponse({
             "refugee_name": cert.refugee_name,
             "did": profile.did,
             "certificate_id": certificate_id,
-            "total_eligible": len(eligible),
-            "recommendations": eligible[:5],
-            "ai_insights": [
-                "Healthcare services available for all refugees",
-                "Employment services priority for newcomers" if time_arrival < 6 else "Consider career advancement programs"
-            ],
-            "next_steps": [
-                {"priority": "HIGH", "action": "Register for healthcare coverage", "timeline": "Within 7 days"},
-                {"priority": "HIGH", "action": "Apply for emergency housing", "timeline": "Immediately"}
-            ]
+            "total_eligible": ai_result["total_eligible"],
+            "recommendations": ai_result["recommendations"],
+            "ai_model": ai_result["ai_model"],
+            "decision_hash": ai_result["decision_hash"],
+            "profile_hash": ai_result["profile_hash"],
+            "contract_payload": ai_result["contract_payload"],
+            "ai_insights": ai_result["ai_insights"],
+            "next_steps": ai_result["next_steps"],
+            "risk_flags": ai_result["risk_flags"],
+            "feature_vector": ai_result["feature_vector"],
         })
     
     return render(request, 'enhanced/service_matching.html')
@@ -279,22 +251,15 @@ def generate_zk_proof(request):
             }
         )
         
-        # Generate ZK proof - now the score is computed, not user-entered
+        # AI score drives the proof claim; users cannot self-assert eligibility.
+        ai_result = AI_ENGINE.recommend(cert)
+        service_type_upper = service_type.upper()
+        matched = AI_ENGINE.find_service_recommendation(ai_result, service_type_upper)
+
         commitment = hashlib.sha256(f"{certificate_id}:{profile.did}:{time.time()}".encode()).hexdigest()
-        
-        # Calculate score based on service type (simulating AI assessment)
-        if service_type == 'healthcare':
-            score = 90  # Everyone needs healthcare
-        elif service_type == 'education':
-            score = 75
-        elif service_type == 'employment':
-            score = 80
-        elif service_type == 'housing':
-            score = 85
-        else:
-            score = 70
-            
-        min_score = 50  # Fixed threshold for all services
+
+        score = matched["eligibility_score"] if matched else 0
+        min_score = matched["min_score"] if matched else AI_ENGINE.min_score_for_service(service_type)
         
         proof = {
             "refugee_commitment": commitment,
@@ -302,6 +267,7 @@ def generate_zk_proof(request):
             "service_type": service_type,
             "min_score": min_score,
             "claimed_eligible": 1 if score >= min_score else 0,
+            "ai_decision_hash": ai_result["decision_hash"],
             "zk_proof": {
                 "pi_a": "0x" + hashlib.sha256(f"{commitment}:a".encode()).hexdigest(),
                 "pi_b": "0x" + hashlib.sha256(f"{commitment}:b".encode()).hexdigest(),
@@ -326,6 +292,7 @@ def generate_zk_proof(request):
             "did": profile.did,
             "certificate_id": certificate_id,
             "proof": proof,
+            "risk_flags": ai_result["risk_flags"],
             "explanation": {
                 "what": "You proved eligibility WITHOUT revealing your identity",
                 "how": "The ZK proof only shows you meet the criteria (score >= min_score)",

@@ -1,80 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Identity - CertifyChain SSI</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .hero-gradient { background: linear-gradient(135deg, #667eea, #764ba2); }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">🔐 CertifyChain SSI</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Home</a>
-                <a class="nav-link" href="/ssi/">Dashboard</a>
-            </div>
-        </div>
-    </nav>
+{% extends 'enhanced/base_enhanced.html' %}
 
-    <section class="hero-gradient py-4">
-        <div class="container">
-            <h1 class="display-5 fw-bold text-white">📝 Create Decentralized Identity</h1>
-            <p class="text-white">Generate your Self-Sovereign Identity (SSI)</p>
-        </div>
-    </section>
+{% block title %}Create DID - CertifyChain SSI{% endblock %}
 
-    <div class="container py-5">
-        <div class="row">
-            <div class="col-lg-6 mx-auto">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Wallet Address</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="identityForm">
-                            <div class="mb-3">
-                                <label class="form-label">Ethereum Address (Optional)</label>
-                                <input type="text" class="form-control" name="eth_address" placeholder="0x...">
-                                <small class="text-muted">Leave blank to auto-generate</small>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Create DID</button>
-                        </form>
-                        
-                        <div class="mt-4" id="result" style="display:none;">
-                            <div class="alert alert-success">
-                                <h6>Identity Created!</h6>
-                                <p class="mb-1"><strong>DID:</strong> <small id="didResult"></small></p>
-                                <p class="mb-0"><strong>Status:</strong> <span id="statusResult"></span></p>
-                            </div>
-                        </div>
-                    </div>
+{% block content %}
+<section class="hero-gradient p-4 p-md-5 mb-4 fade-in-up">
+    <span class="brand-pill">Step 2</span>
+    <h1 class="display-6 fw-bold mt-3 mb-2">Create Decentralized Identity</h1>
+    <p class="mb-0 opacity-75">A verified certificate lets you mint a DID for privacy-preserving service access.</p>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel p-4 fade-in-up">
+            <h5 class="fw-bold mb-3">Identity Request</h5>
+            <form id="identityForm">
+                <div class="mb-3">
+                    <label class="form-label">Certificate ID</label>
+                    <input type="text" class="form-control" name="certificate_id" required placeholder="REF-ABC-1234567890">
                 </div>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Ethereum Address (Optional)</label>
+                    <input type="text" class="form-control" name="eth_address" placeholder="0x...">
+                </div>
+                <button type="submit" class="btn btn-brand w-100">Create DID</button>
+            </form>
+            <div class="mt-4" id="result"></div>
         </div>
     </div>
+    <div class="col-lg-5">
+        <div class="panel p-4 fade-in-up">
+            <h6 class="fw-bold">Why DID?</h6>
+            <p class="mb-2">DID gives the refugee control over identity assertions without exposing raw personal data.</p>
+            <ul class="mb-0">
+                <li>Verifiable ownership</li>
+                <li>Interoperable identity layer</li>
+                <li>Input to AI and ZK workflows</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.getElementById('identityForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData);
-            
-            const response = await fetch('/ssi/create/', {
+{% block extra_js %}
+<script>
+    const identityForm = document.getElementById('identityForm');
+    const resultEl = document.getElementById('result');
+
+    const certIdFromUrl = new URLSearchParams(window.location.search).get('certificate_id');
+    if (certIdFromUrl) {
+        identityForm.querySelector('input[name="certificate_id"]').value = certIdFromUrl;
+    }
+
+    identityForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(identityForm));
+        resultEl.innerHTML = '<div class="alert alert-info">Creating DID...</div>';
+
+        try {
+            const response = await fetch('{% url "create_identity" %}', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-            
             const result = await response.json();
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('didResult').textContent = result.did;
-            document.getElementById('statusResult').textContent = result.status;
-        });
-    </script>
-</body>
-</html>
+
+            if (!response.ok || result.error) {
+                resultEl.innerHTML = '<div class="alert alert-danger">' + (result.message || 'Unable to create DID') + '</div>';
+                return;
+            }
+
+            let html = '<div class="alert alert-success"><strong>DID Ready</strong></div>';
+            html += '<p><strong>DID:</strong><br><code>' + result.did + '</code></p>';
+            html += '<p><strong>Owner:</strong> <code>' + result.owner + '</code></p>';
+            html += '<a class="btn btn-brand" href="{% url "service_matching" %}?certificate_id=' + encodeURIComponent(result.certificate_id || data.certificate_id) + '">Go to AI Matching</a>';
+            resultEl.innerHTML = html;
+        } catch (err) {
+            resultEl.innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
+        }
+    });
+</script>
+{% endblock %}

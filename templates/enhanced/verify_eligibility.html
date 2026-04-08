@@ -1,0 +1,68 @@
+{% extends 'enhanced/base_enhanced.html' %}
+
+{% block title %}Verify Eligibility - CertifyChain SSI{% endblock %}
+
+{% block content %}
+<section class="hero-gradient p-4 p-md-5 mb-4 fade-in-up">
+    <h1 class="display-6 fw-bold mb-2">Verifier Portal</h1>
+    <p class="mb-0 opacity-75">Validate ZK proof public signals without seeing sensitive personal attributes.</p>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel p-4 fade-in-up">
+            <h5 class="fw-bold">Proof Verification</h5>
+            <form id="verifyEligibilityForm">
+                <div class="mb-3">
+                    <label class="form-label">Paste Proof JSON</label>
+                    <textarea class="form-control" rows="10" id="proofJson" placeholder='{"zk_proof": {"public_signals": ["healthcare", 50, 1]}}'></textarea>
+                </div>
+                <button class="btn btn-brand w-100" type="submit">Verify Eligibility</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="panel p-4 fade-in-up" id="verifyResult">
+            <div class="text-muted">Paste a proof payload and run verification.</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const form = document.getElementById('verifyEligibilityForm');
+    const resultEl = document.getElementById('verifyResult');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        let proof;
+        try {
+            proof = JSON.parse(document.getElementById('proofJson').value || '{}');
+        } catch {
+            resultEl.innerHTML = '<div class="alert alert-danger">Invalid JSON format.</div>';
+            return;
+        }
+
+        resultEl.innerHTML = '<div class="alert alert-info">Verifying proof...</div>';
+
+        try {
+            const response = await fetch('{% url "verify_eligibility" %}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({proof})
+            });
+            const result = await response.json();
+            const tone = result.valid ? 'success' : 'danger';
+            let html = '<div class="alert alert-' + tone + '"><strong>' + result.message + '</strong></div>';
+            html += '<p><strong>Service Type:</strong> ' + (result.what_verified.service_type ?? 'n/a') + '</p>';
+            html += '<p><strong>Min Score:</strong> ' + (result.what_verified.min_score ?? 'n/a') + '</p>';
+            html += '<p><strong>Eligible:</strong> ' + (result.what_verified.eligible ?? 'n/a') + '</p>';
+            html += '<p class="small text-muted mb-0">' + result.note + '</p>';
+            resultEl.innerHTML = html;
+        } catch (err) {
+            resultEl.innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
+        }
+    });
+</script>
+{% endblock %}

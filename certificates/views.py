@@ -157,7 +157,6 @@ def issue_certificate(request):
                 gender=gend,
                 certificate_id=certificate_id,
                 valid_until=valuntil,
-                issue_date=issdate,
                 generated_by=request.user,
                 transaction_hash=transaction_hash if transaction_hash else None,
                 skills=form.cleaned_data.get('skills', ''),
@@ -171,6 +170,7 @@ def issue_certificate(request):
 
             if contract and web3:
                 try:
+                    issuer_address = web3.eth.accounts[0]
                     tx_hash = contract.functions.issueCertificate(
                         recipient,
                         form.cleaned_data['refugee_name'],
@@ -181,8 +181,8 @@ def issue_certificate(request):
                         str(certificate_id),
                         str(form.cleaned_data['issuing_date']),
                         str(form.cleaned_data['valid_until']),
-                        request.user.username
-                    ).transact({'from': web3.eth.accounts[0]})
+                        issuer_address
+                    ).transact({'from': issuer_address})
                     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
                 except Exception as e:
                     print(f"Blockchain transaction failed: {e}")
