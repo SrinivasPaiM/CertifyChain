@@ -1,6 +1,12 @@
 from django import forms
 
 class IssueCertificateForm(forms.Form):
+    transaction_hash = forms.CharField(
+        label='Transaction Hash', 
+        max_length=100, 
+        required=True,
+        help_text='The transaction hash from Remix/Ganache after deploying the certificate'
+    )
     recipient_address = forms.CharField(label='Recipient Ethereum Address', max_length=100)
     certificate_data = forms.CharField(label='Certificate Data', widget=forms.Textarea, required=False)
     valid_until = forms.DateField(label='Valid Until', widget=forms.DateInput(attrs={'type': 'date'}))

@@ -11,6 +11,7 @@ class Certificate(models.Model):
     issue_date = models.DateField(auto_now_add=True)
     valid_until = models.DateField()
     generated_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    transaction_hash = models.CharField(max_length=100, blank=True, null=True)
     
     # Extended profile for AI matching
     skills = models.TextField(blank=True, help_text="Comma-separated skills")

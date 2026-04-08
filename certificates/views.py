@@ -147,6 +147,7 @@ def issue_certificate(request):
             gend = form.cleaned_data['gender']
 
             certificate_id = f"REF-{form.cleaned_data['refugee_name'][:3].upper()}-{int(time.time())}"
+            transaction_hash = form.cleaned_data.get('transaction_hash', '')
 
             refugee = Certificate.objects.create(
                 refugee_name=refname,
@@ -158,6 +159,7 @@ def issue_certificate(request):
                 valid_until=valuntil,
                 issue_date=issdate,
                 generated_by=request.user,
+                transaction_hash=transaction_hash if transaction_hash else None,
                 skills=form.cleaned_data.get('skills', ''),
                 employment_status=form.cleaned_data.get('employment_status', 'unemployed'),
                 family_size=form.cleaned_data.get('family_size', 1),
