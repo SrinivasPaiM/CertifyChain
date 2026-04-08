@@ -157,7 +157,14 @@ def issue_certificate(request):
                 certificate_id=certificate_id,
                 valid_until=valuntil,
                 issue_date=issdate,
-                generated_by=request.user
+                generated_by=request.user,
+                skills=form.cleaned_data.get('skills', ''),
+                employment_status=form.cleaned_data.get('employment_status', 'unemployed'),
+                family_size=form.cleaned_data.get('family_size', 1),
+                has_children=form.cleaned_data.get('has_children', False),
+                language_proficiency=form.cleaned_data.get('language_proficiency', 1),
+                time_since_arrival=form.cleaned_data.get('time_since_arrival', 1),
+                special_needs=form.cleaned_data.get('special_needs', False)
             )
 
             if contract and web3:

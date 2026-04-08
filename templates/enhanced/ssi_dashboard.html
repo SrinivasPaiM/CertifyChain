@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> SSI Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-gradient { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔐 CertifyChain SSI</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link active" href="/ssi/">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-gradient py-5">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Self-Sovereign Identity Dashboard</h1>
+            <p class="lead">Complete flow: Certificate → DID → ZK Proofs → Services</p>
+        </div>
+    </section>
+
+    <div class="container py-5">
+        <div class="alert alert-info">
+            <h5>How it Works:</h5>
+            <ol>
+                <li><strong>Get Certificate</strong> - Contact admin to get verified refugee certificate</li>
+                <li><strong>Verify Certificate</strong> - Verify your certificate at /ssi/verify/</li>
+                <li><strong>Create DID</strong> - Generate your Decentralized Identity</li>
+                <li><strong>AI Matching</strong> - Get personalized service recommendations</li>
+                <li><strong>ZK Proofs</strong> - Prove eligibility without revealing identity</li>
+            </ol>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">📋 Step 1: Get Certificate</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Contact admin to verify your refugee status and get a certificate.</p>
+                        <a href="/certificates/generate/" class="btn btn-primary">Admin Panel</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">✅ Step 2: Verify & Create DID</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Verify your certificate and create your Decentralized Identity.</p>
+                        <a href="/ssi/verify/" class="btn btn-success">Verify Certificate</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">🤖 Step 3: AI Services</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Get personalized service recommendations.</p>
+                        <a href="/services/match/" class="btn btn-warning">AI Matching</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-3">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-purple text-white" style="background: #764ba2;">
+                        <h5 class="mb-0">🔐 Step 4: Generate ZK Proof</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Prove eligibility without revealing your identity.</p>
+                        <a href="/zk/proof/" class="btn btn-purple" style="background: #764ba2; color: white;">Generate ZK Proof</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">📖 API Documentation</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Learn about the API and research paper details.</p>
+                        <a href="/api/docs/" class="btn btn-info">View Docs</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

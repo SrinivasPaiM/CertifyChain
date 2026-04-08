@@ -5,53 +5,118 @@
 {% block content %}
 <section class="py-5">
     <div class="container">
-        <h1 class="text-center mb-5">Generate Refugee Certificate</h1>
+        <h1 class="text-center mb-5">Generate Refugee Certificate (with AI Profile)</h1>
+        <p class="text-center text-muted mb-4">Enter refugee details and profile information for AI service matching</p>
         <div class="row">
-            <div class="col-lg-8 mx-auto">
+            <div class="col-lg-10 mx-auto">
                 <div class="card">
                     <div class="card-body">
                         <form method="POST">
                             {% csrf_token %}
-                            <div class="mb-3">
-                                <label for="recipient_address" class="form-label">Recipient Address (Ethereum)</label>
-                                <input type="text" class="form-control" id="recipient_address" name="recipient_address" required>
+                            
+                            <h5 class="mb-3 text-primary">Basic Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="recipient_address" class="form-label">Recipient Address (Ethereum)</label>
+                                    <input type="text" class="form-control" id="recipient_address" name="recipient_address" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="refugee_name" class="form-label">Refugee Name</label>
+                                    <input type="text" class="form-control" id="refugee_name" name="refugee_name" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="country" class="form-label">Country of Origin</label>
+                                    <input type="text" class="form-control" id="country" name="country" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="address" class="form-label">Current Address</label>
+                                    <input type="text" class="form-control" id="address" name="address" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Select Gender</option>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <h5 class="mb-3 mt-4 text-primary">AI Profile (for Service Matching)</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="skills" class="form-label">Skills (comma-separated)</label>
+                                    <input type="text" class="form-control" id="skills" name="skills" placeholder="e.g., cooking, driving, computers, languages">
+                                    <small class="text-muted">Enter skills to improve job matching</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="employment_status" class="form-label">Employment Status</label>
+                                    <select class="form-select" id="employment_status" name="employment_status">
+                                        <option value="unemployed">Unemployed</option>
+                                        <option value="employed">Employed</option>
+                                        <option value="self_employed">Self-Employed</option>
+                                        <option value="student">Student</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="family_size" class="form-label">Family Size</label>
+                                    <input type="number" class="form-control" id="family_size" name="family_size" value="1" min="1">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="language_proficiency" class="form-label">Language Proficiency</label>
+                                    <select class="form-select" id="language_proficiency" name="language_proficiency">
+                                        <option value="1">None/Basic</option>
+                                        <option value="2">Elementary</option>
+                                        <option value="3">Intermediate</option>
+                                        <option value="4">Advanced</option>
+                                        <option value="5">Fluent</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="time_since_arrival" class="form-label">Months Since Arrival</label>
+                                    <input type="number" class="form-control" id="time_since_arrival" name="time_since_arrival" value="1" min="1">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="has_children" name="has_children">
+                                        <label class="form-check-label" for="has_children">Has Children</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="special_needs" name="special_needs">
+                                        <label class="form-check-label" for="special_needs">Special Needs</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h5 class="mb-3 mt-4 text-primary">Certificate Validity</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="issuing_date" class="form-label">Issuing Date</label>
+                                    <input type="date" class="form-control" id="issuing_date" name="issuing_date" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="valid_until" class="form-label">Valid Until</label>
+                                    <input type="date" class="form-control" id="valid_until" name="valid_until" required>
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <label for="refugee_name" class="form-label">Refugee Name</label>
-                                <input type="text" class="form-control" id="refugee_name" name="refugee_name" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="country" class="form-label">Country of Origin</label>
-                                <input type="text" class="form-control" id="country" name="country" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="date_of_birth" class="form-label">Date of Birth</label>
-                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Address</label>
-                                <input type="text" class="form-control" id="address" name="address" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="gender" class="form-label">Gender</label>
-                                <select class="form-select" id="gender" name="gender" required>
-                                    <option value="">Select Gender</option>
-                                    <option value="male">Male</option>
-                                    <option value="female">Female</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="certificate_data" class="form-label">Certificate Data</label>
-                                <textarea class="form-control" id="certificate_data" name="certificate_data" rows="3" required></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label for="issuing_date" class="form-label">Issuing Date</label>
-                                <input type="date" class="form-control" id="issuing_date" name="issuing_date" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="valid_until" class="form-label">Valid Until</label>
-                                <input type="date" class="form-control" id="valid_until" name="valid_until" required>
+                                <label for="certificate_data" class="form-label">Certificate Notes (Optional)</label>
+                                <textarea class="form-control" id="certificate_data" name="certificate_data" rows="2"></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Generate Certificate</button>
                         </form>

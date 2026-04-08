@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK Proof Generator - CertifyChain SSI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-gradient { background: linear-gradient(135deg, #667eea, #764ba2); }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔐 CertifyChain SSI</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/ssi/">Dashboard</a>
+                <a class="nav-link" href="/services/match/">AI Match</a>
+                <a class="nav-link active" href="/zk/proof/">ZK Proofs</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-gradient py-4">
+        <div class="container">
+            <h1 class="display-5 fw-bold text-white">🔐 Zero-Knowledge Proof Generator</h1>
+            <p class="text-white">Prove eligibility WITHOUT revealing your identity</p>
+        </div>
+    </section>
+
+    <div class="container py-5">
+        <div class="alert alert-info mb-4">
+            <h5>What is a ZK Proof?</h5>
+            <p>Zero-Knowledge Proof lets you prove something is true WITHOUT revealing the actual information.</p>
+            <p><strong>Example:</strong> Instead of showing your ID card to prove you're eligible for healthcare, you can generate a mathematical proof that says "I am eligible" without showing any personal details.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Generate ZK Proof</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="zkForm">
+                            <div class="mb-3">
+                                <label class="form-label">Certificate ID</label>
+                                <input type="text" class="form-control" name="certificate_id" placeholder="e.g., REF-JOH-1234567890" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Select Service to Access</label>
+                                <select class="form-select" name="service_type" required>
+                                    <option value="healthcare">Healthcare</option>
+                                    <option value="education">Education</option>
+                                    <option value="employment">Employment</option>
+                                    <option value="housing">Housing</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Generate Proof</button>
+                        </form>
+                        
+                        <div class="mt-4" id="zkResult">
+                            <div class="alert alert-secondary">
+                                Enter your Certificate ID and select a service to generate a ZK proof.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('zkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            document.getElementById('zkResult').innerHTML = '<div class="text-center"><div class="spinner-border text-primary"></div><p>Generating proof...</p></div>';
+            
+            try {
+                const response = await fetch('/zk/proof/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    document.getElementById('zkResult').innerHTML = '<div class="alert alert-danger">' + result.message + '</div>';
+                    return;
+                }
+                
+                let html = '<div class="alert alert-success"><strong>✅ ZK Proof Generated!</strong></div>';
+                html += '<p><strong>Refugee:</strong> ' + result.refugee_name + '</p>';
+                html += '<p><strong>Your DID:</strong> <code>' + result.did + '</code></p>';
+                html += '<p><strong>Service:</strong> ' + result.certificate_id + '</p>';
+                
+                html += '<div class="alert alert-warning mt-3">';
+                html += '<h6>🔒 Privacy Protection:</h6>';
+                html += '<p class="mb-0"><strong>What you proved:</strong> "' + data.service_type + '" eligibility</p>';
+                html += '<p class="mb-0"><strong>What the service provider CAN see:</strong> Only that your ZK proof is valid</p>';
+                html += '<p class="mb-0"><strong>What they CANNOT see:</strong> Your name, ID, address, nationality, or any personal details!</p>';
+                html += '</div>';
+                
+                html += '<div class="bg-light p-3 rounded mt-3">';
+                html += '<small><strong>ZK Proof Data (for on-chain verification):</strong></small>';
+                html += '<pre class="mt-2" style="font-size:10px;">' + JSON.stringify(result.proof, null, 2) + '</pre>';
+                html += '</div>';
+                
+                document.getElementById('zkResult').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('zkResult').innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+            }
+        });
+        
+        // Get certificate_id from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const certId = urlParams.get('certificate_id');
+        if (certId) {
+            document.querySelector('input[name="certificate_id"]').value = certId;
+        }
+    </script>
+</body>
+</html>
