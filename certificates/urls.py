@@ -11,6 +11,7 @@ urlpatterns = [
     path('zk/proof/', enhanced_views.generate_zk_proof, name='generate_zk_proof'),
     path('services/request/', enhanced_views.request_service, name='request_service'),
     path('eligibility/verify/', enhanced_views.verify_eligibility, name='verify_eligibility'),
+    path('eligibility/verify/page/', enhanced_views.verify_eligibility, name='verify_eligibility_page'),
     
     # API endpoints
     path('api/services/<int:service_type>/', enhanced_views.api_service_eligibility, name='api_service_eligibility'),

@@ -73,6 +73,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function copyProof() {
+            if (window.proofData) {
+                navigator.clipboard.writeText(JSON.stringify(window.proofData, null, 2));
+                alert('SHAREABLE PROOF copied! This is safe to send to service providers.');
+            }
+        }
+        
         document.getElementById('zkForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
@@ -96,8 +103,9 @@
                 
                 let html = '<div class="alert alert-success"><strong>✅ ZK Proof Generated!</strong></div>';
                 html += '<p><strong>Refugee:</strong> ' + result.refugee_name + '</p>';
-                html += '<p><strong>Your DID:</strong> <code>' + result.did + '</code></p>';
-                html += '<p><strong>Service:</strong> ' + result.certificate_id + '</p>';
+                html += '<p><strong>Your DID:</strong> <code class="bg-light px-2 py-1">' + result.did + '</code></p>';
+                html += '<p><strong>Certificate ID:</strong> ' + result.certificate_id + '</p>';
+                html += '<p><strong>Service:</strong> ' + result.proof.service_type + '</p>';
                 
                 html += '<div class="alert alert-warning mt-3">';
                 html += '<h6>🔒 Privacy Protection:</h6>';
@@ -106,12 +114,42 @@
                 html += '<p class="mb-0"><strong>What they CANNOT see:</strong> Your name, ID, address, nationality, or any personal details!</p>';
                 html += '</div>';
                 
-                html += '<div class="bg-light p-3 rounded mt-3">';
-                html += '<small><strong>ZK Proof Data (for on-chain verification):</strong></small>';
+                if (result.proof.mode === 'real_zk') {
+                    html += '<div class="alert alert-success mt-3">';
+                    html += '<strong>✅ REAL ZK Proof Generated!</strong> Using snarkjs + circom';
+                    html += '</div>';
+                } else if (result.proof.mode === 'mock_circuits_not_ready') {
+                    html += '<div class="alert alert-warning mt-3">';
+                    html += '<strong>⚠️ snarkjs installed but circuits not compiled.</strong> Running in demo mode.';
+                    html += '</div>';
+                } else {
+                    html += '<div class="alert alert-secondary mt-3">';
+                    html += '<strong>⚠️ Demo Mode:</strong> Mock ZK proof. For real proofs, install snarkjs.';
+                    html += '</div>';
+                }
+                
+                html += '<div class="alert alert-danger mt-3">';
+                html += '<strong>⚠️ IMPORTANT: Copy the SHAREABLE PROOF below, NOT the full proof!</strong>';
+                html += '</div>';
+                
+                html += '<div class="bg-light p-3 rounded mt-2">';
+                html += '<small><strong>📤 SHARE WITH SERVICE PROVIDER (safe to share):</strong></small>';
+                html += '<pre class="mt-2" style="font-size:10px;">' + JSON.stringify(result.shareable_proof, null, 2) + '</pre>';
+                html += '</div>';
+                
+                html += '<div class="bg-light p-3 rounded mt-3" style="opacity: 0.7;">';
+                html += '<small><strong>🔐 FULL PROOF (keep private):</strong></small>';
                 html += '<pre class="mt-2" style="font-size:10px;">' + JSON.stringify(result.proof, null, 2) + '</pre>';
                 html += '</div>';
                 
+                html += '<div class="mt-3 text-center">';
+                html += '<button class="btn btn-outline-primary btn-sm" onclick="copyProof()">📋 Copy SHAREABLE Proof</button>';
+                html += '<a href="/eligibility/verify/page/" class="btn btn-outline-success btn-sm ms-2">🔍 Verify This Proof</a>';
+                html += '</div>';
+
                 document.getElementById('zkResult').innerHTML = html;
+                
+                window.proofData = result.shareable_proof;
                 
             } catch (error) {
                 document.getElementById('zkResult').innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';

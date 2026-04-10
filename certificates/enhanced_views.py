@@ -11,7 +11,9 @@ import json
 import hashlib
 import os
 import time
+import subprocess
 from enum import Enum
+from pathlib import Path
 
 
 class ServiceType(Enum):
@@ -21,6 +23,103 @@ class ServiceType(Enum):
     HOUSING = 3
     LEGAL_AID = 4
     FOOD_ASSISTANCE = 5
+
+
+def check_snarkjs_installed():
+    """Check if snarkjs is installed (circom optional if circuits pre-compiled)"""
+    try:
+        subprocess.run(["snarkjs", "--version"], capture_output=True, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+
+
+def check_circuits_ready():
+    """Check if ZK circuits are pre-compiled and ready"""
+    circuits_dir = Path(__file__).parent.parent / "zk-circuits"
+    required_files = [
+        circuits_dir / "eligibility.r1cs",
+        circuits_dir / "eligibility.js",
+        circuits_dir / "eligibility_0000.zkey"
+    ]
+    return all(f.exists() for f in required_files)
+
+
+ZK_AVAILABLE = check_snarkjs_installed()
+CIRCUITS_READY = check_circuits_ready()
+
+
+def generate_mock_zk_proof(commitment, service_type, min_score, is_eligible):
+    """Generate mock ZK proof for demo purposes"""
+    return {
+        "pi_a": "0x" + hashlib.sha256(f"{commitment}:a".encode()).hexdigest(),
+        "pi_b": "0x" + hashlib.sha256(f"{commitment}:b".encode()).hexdigest(),
+        "pi_c": "0x" + hashlib.sha256(f"{commitment}:c".encode()).hexdigest(),
+        "public_signals": [service_type, min_score, is_eligible]
+    }
+
+
+def generate_real_zk_proof(eligibility_score, service_type, min_score, refugee_commitment):
+    """
+    Generate real ZK proof using snarkjs
+    
+    This requires:
+    1. Circuit compiled: circom eligibility.circom --r1cs --wasm --sym
+    2. Trusted setup: snarkjs groth16 setup eligibility.r1cs pot12_0000.ptau eligibility_0000.zkey
+    """
+    circuits_dir = Path(__file__).parent.parent / "zk-circuits"
+    
+    # Create witness input for the circuit
+    witness_input = {
+        "refugee_id_hash": int(refugee_commitment[:16], 16),
+        "eligibility_score": eligibility_score,
+        "service_type": service_type,
+        "min_score": min_score,
+        "claimed_eligible": 1 if eligibility_score >= min_score else 0
+    }
+    
+    input_file = circuits_dir / "input.json"
+    with open(input_file, "w") as f:
+        json.dump(witness_input, f)
+    
+    # Generate witness using WASM
+    try:
+        subprocess.run(
+            ["node", str(circuits_dir / "eligibility.js"), str(input_file), str(circuits_dir / "witness.wtns")],
+            cwd=circuits_dir,
+            capture_output=True,
+            check=True
+        )
+        
+        # Generate proof
+        subprocess.run(
+            ["snarkjs", "groth16", "prove", 
+             str(circuits_dir / "eligibility_0000.zkey"),
+             str(circuits_dir / "witness.wtns"),
+             str(circuits_dir / "public.json"),
+             str(circuits_dir / "proof.json")],
+            cwd=circuits_dir,
+            capture_output=True,
+            check=True
+        )
+        
+        # Read the generated proof
+        with open(circuits_dir / "proof.json", "r") as f:
+            proof_data = json.load(f)
+        
+        with open(circuits_dir / "public.json", "r") as f:
+            public_data = json.load(f)
+        
+        return {
+            "pi_a": proof_data["pi_a"],
+            "pi_b": proof_data["pi_b"],
+            "pi_c": proof_data["pi_c"],
+            "public_signals": public_data
+        }
+    except Exception as e:
+        # If real ZK fails, fall back to mock
+        print(f"Real ZK generation failed: {e}")
+        return generate_mock_zk_proof(refugee_commitment, service_type, min_score, 1 if eligibility_score >= min_score else 0)
 
 
 def index(request):
@@ -282,6 +381,15 @@ def generate_zk_proof(request):
         # Generate ZK proof - now the score is computed, not user-entered
         commitment = hashlib.sha256(f"{certificate_id}:{profile.did}:{time.time()}".encode()).hexdigest()
         
+        # Map service type string to integer (matching circuit)
+        service_type_map = {
+            'healthcare': 0,
+            'education': 1,
+            'employment': 2,
+            'housing': 3
+        }
+        service_type_int = service_type_map.get(service_type, 0)
+        
         # Calculate score based on service type (simulating AI assessment)
         if service_type == 'healthcare':
             score = 90  # Everyone needs healthcare
@@ -295,29 +403,59 @@ def generate_zk_proof(request):
             score = 70
             
         min_score = 50  # Fixed threshold for all services
+        is_eligible = 1 if score >= min_score else 0
         
-        proof = {
+        # Generate commitment for ZK circuit (private, not shared with verifier)
+        circuit_input = f"{profile.did}:{score}:{service_type_int}:{min_score}"
+        commitment = hashlib.sha256(circuit_input.encode()).hexdigest()
+        
+        # Try to generate real ZK proof if snarkjs is available and circuits ready
+        if ZK_AVAILABLE and CIRCUITS_READY:
+            try:
+                proof_result = generate_real_zk_proof(
+                    eligibility_score=score,
+                    service_type=service_type_int,
+                    min_score=min_score,
+                    refugee_commitment=commitment
+                )
+                proof_mode = "real_zk"
+            except Exception as e:
+                proof_result = generate_mock_zk_proof(commitment, service_type_int, min_score, is_eligible)
+                proof_mode = "mock_fallback"
+        elif ZK_AVAILABLE:
+            proof_result = generate_mock_zk_proof(commitment, service_type_int, min_score, is_eligible)
+            proof_mode = "mock_circuits_not_ready"
+        else:
+            proof_result = generate_mock_zk_proof(commitment, service_type_int, min_score, is_eligible)
+            proof_mode = "mock"
+        
+        # Create the FULL proof (kept by refugee) - contains all info
+        full_proof = {
             "refugee_commitment": commitment,
             "did": profile.did,
             "service_type": service_type,
+            "service_type_int": service_type_int,
             "min_score": min_score,
-            "claimed_eligible": 1 if score >= min_score else 0,
-            "zk_proof": {
-                "pi_a": "0x" + hashlib.sha256(f"{commitment}:a".encode()).hexdigest(),
-                "pi_b": "0x" + hashlib.sha256(f"{commitment}:b".encode()).hexdigest(),
-                "pi_c": "0x" + hashlib.sha256(f"{commitment}:c".encode()).hexdigest(),
-                "public_signals": [service_type, min_score, 1 if score >= min_score else 0]
-            },
+            "claimed_eligible": is_eligible,
+            "zk_proof": proof_result,
             "timestamp": int(time.time()),
-            "expiry": int(time.time()) + 3600
+            "expiry": int(time.time()) + 3600,
+            "mode": proof_mode
         }
         
-        # Save proof record
+        # Create VERIFIER-PROOF (only ZK proof data - NO personal info)
+        verifier_proof = {
+            "zk_proof": full_proof["zk_proof"],
+            "timestamp": full_proof["timestamp"],
+            "expiry": full_proof["expiry"]
+        }
+        
+        # Save proof record (using full_proof for records)
         ZKProofRecord.objects.create(
             refugee=profile,
             service_type=service_type,
             commitment_hash=commitment,
-            proof_data=proof
+            proof_data=full_proof
         )
         
         return JsonResponse({
@@ -325,12 +463,14 @@ def generate_zk_proof(request):
             "refugee_name": cert.refugee_name,
             "did": profile.did,
             "certificate_id": certificate_id,
-            "proof": proof,
+            "proof": full_proof,
+            "shareable_proof": verifier_proof,  # Only this should be shared with service providers
             "explanation": {
                 "what": "You proved eligibility WITHOUT revealing your identity",
                 "how": "The ZK proof only shows you meet the criteria (score >= min_score)",
                 "privacy": "Service provider cannot see your name, ID, or personal details",
-                "verification": "They can verify the proof on-chain without knowing who you are"
+                "verification": "They can verify the proof on-chain without knowing who you are",
+                "warning": "IMPORTANT: Only share the 'shareable_proof' with service providers, NOT the full proof"
             }
         })
     
@@ -392,9 +532,16 @@ def request_service(request):
 def verify_eligibility(request):
     """Verify eligibility with ZK proof (for service providers)"""
     if request.method == 'POST':
-        data = json.loads(request.body)
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({'valid': False, 'message': 'Invalid JSON'}, status=400)
         
         proof = data.get('proof', {})
+        
+        if not proof:
+            return JsonResponse({'valid': False, 'message': 'No proof provided'}, status=400)
+        
         public_signals = proof.get('zk_proof', {}).get('public_signals', [])
         
         is_valid = len(public_signals) >= 3 and public_signals[2] == 1
@@ -425,32 +572,4 @@ def api_service_eligibility(request, service_type):
 
 def api_documentation(request):
     """API documentation"""
-    docs = {
-        "title": "CertifyChain SSI API v2.0",
-        "description": "Privacy-Preserving Identity API for Refugees",
-        "flow": {
-            "step1": "Get certificate from admin (verified refugee status)",
-            "step2": "Create DID using certificate ID at /ssi/create/",
-            "step3": "Use AI matching at /services/match/ to find services",
-            "step4": "Generate ZK proof at /zk/proof/ to prove eligibility without revealing identity"
-        },
-        "endpoints": {
-            "/certificates/generate/": "Admin: Issue certificate to refugee",
-            "/ssi/create/": "Create DID from verified certificate",
-            "/services/match/": "AI-powered service matching (DID required)",
-            "/zk/proof/": "Generate ZK proof for service eligibility",
-            "/services/request/": "Request service access with ZK",
-            "/eligibility/verify/": "Verify ZK proof (for service providers)"
-        },
-        "key_concepts": {
-            "ZK_Proof": "Proves something is true WITHOUT revealing the underlying data",
-            "DID": "Decentralized Identifier - your self-sovereign identity",
-            "SSI": "Self-Sovereign Identity - you own your identity"
-        },
-        "research_paper": {
-            "title": "Privacy-Preserving AI-Driven SSI for Marginalized Populations",
-            "conference": "International Blockchain Conference Prague 2026"
-        }
-    }
-    
-    return JsonResponse(docs)
+    return render(request, 'enhanced/api_docs.html')

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - CertifyChain SSI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .hero-gradient { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        code { color: #d63384; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">🔐 CertifyChain SSI</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/ssi/">Dashboard</a>
+                <a class="nav-link active" href="/api/docs/">Docs</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-gradient py-5">
+        <div class="container">
+            <h1 class="display-4 fw-bold text-white">📖 API Documentation</h1>
+            <p class="lead text-white">CertifyChain SSI - Privacy-Preserving Identity API</p>
+        </div>
+    </section>
+
+    <div class="container py-5">
+        <div class="alert alert-info">
+            <h4>🔐 Research Paper: "Privacy-Preserving AI-Driven SSI for Marginalized Populations"</h4>
+            <p>International Blockchain Conference Prague 2026</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="list-group">
+                    <a href="#overview" class="list-group-item list-group-item-action">Overview</a>
+                    <a href="#flow" class="list-group-item list-group-item-action">System Flow</a>
+                    <a href="#endpoints" class="list-group-item list-group-item-action">API Endpoints</a>
+                    <a href="#zk-proofs" class="list-group-item list-group-item-action">ZK Proofs</a>
+                    <a href="#blockchain" class="list-group-item list-group-item-action">Blockchain Integration</a>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <section id="overview" class="mb-5">
+                    <h2>Overview</h2>
+                    <p>CertifyChain SSI provides a privacy-preserving identity system for refugees using:</p>
+                    <ul>
+                        <li><strong>Self-Sovereign Identity (SSI)</strong> - Refugees own their identity</li>
+                        <li><strong>Zero-Knowledge Proofs (ZK)</strong> - Prove eligibility without revealing identity</li>
+                        <li><strong>AI Service Matching</strong> - Personalized recommendations</li>
+                        <li><strong>Blockchain</strong> - Immutable verification</li>
+                    </ul>
+                </section>
+
+                <section id="flow" class="mb-5">
+                    <h2>System Flow</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <ol>
+                                <li><strong>Admin issues certificate</strong> - Verify refugee status</li>
+                                <li><strong>Create DID</strong> - Generate decentralized identifier</li>
+                                <li><strong>AI Matching</strong> - Get service recommendations</li>
+                                <li><strong>Generate ZK Proof</strong> - Prove eligibility without identity</li>
+                                <li><strong>Verify</strong> - Service provider validates proof</li>
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="endpoints" class="mb-5">
+                    <h2>API Endpoints</h2>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">POST /zk/proof/</div>
+                        <div class="card-body">
+                            <p>Generate ZK proof for service eligibility</p>
+                            <strong>Request:</strong>
+                            <pre><code>{
+  "certificate_id": "REF-XXX-1234567890",
+  "service_type": "healthcare"
+}</code></pre>
+                            <strong>Response:</strong>
+                            <pre><code>{
+  "success": true,
+  "did": "did:ethr:0x...",
+  "shareable_proof": { "zk_proof": {...} }
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white">POST /eligibility/verify/</div>
+                        <div class="card-body">
+                            <p>Verify ZK proof (for service providers)</p>
+                            <strong>Request:</strong>
+                            <pre><code>{
+  "proof": {
+    "zk_proof": {
+      "public_signals": [0, 50, 1]
+    }
+  }
+}</code></pre>
+                            <strong>Response:</strong>
+                            <pre><code>{
+  "valid": true,
+  "message": "Eligibility verified - access granted",
+  "privacy_preserved": true
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-dark">POST /services/match/</div>
+                        <div class="card-body">
+                            <p>AI-powered service matching</p>
+                            <strong>Request:</strong>
+                            <pre><code>{
+  "certificate_id": "REF-XXX-1234567890"
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="zk-proofs" class="mb-5">
+                    <h2>Zero-Knowledge Proofs</h2>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5>How ZK Works in This System:</h5>
+                            <ol>
+                                <li>Refugee has a certificate (verified by admin)</li>
+                                <li>System generates a commitment (hash) of their eligibility</li>
+                                <li>ZK circuit proves: "eligibility_score >= min_score" WITHOUT revealing actual score</li>
+                                <li>Service provider only sees: proof is valid/invalid</li>
+                                <li>They CANNOT see: name, ID, address, nationality, or exact eligibility score</li>
+                            </ol>
+                            
+                            <h5 class="mt-3">Public Signals (what verifier sees):</h5>
+                            <ul>
+                                <li><code>public_signals[0]</code> - Service type (0=healthcare, 1=education, etc.)</li>
+                                <li><code>public_signals[1]</code> - Minimum score required</li>
+                                <li><code>public_signals[2]</code> - Eligible (1) or not (0)</li>
+                            </ul>
+                            
+                            <div class="alert alert-info mt-3">
+                                <h5>🔧 Setting Up Real ZK Proofs (Windows)</h5>
+                                <p>Install Rust (which includes cargo):</p>
+                                
+                                <h6>Step 1: Install Rust</h6>
+                                <pre><code># Download and run from:
+https://rustup.rs</code></pre>
+                                <p>Or use PowerShell:</p>
+                                <pre><code>iwr -useb get.scoop.sh | iex
+scoop install rustup</code></pre>
+                                
+                                <h6>Step 2: After installing Rust</h6>
+                                <pre><code>rustup default stable
+cargo install circom
+npm install -g snarkjs</code></pre>
+                                
+                                <h6>Step 3: Compile circuits</h6>
+                                <pre><code>cd zk-circuits
+circom eligibility.circom --r1cs --wasm --sym
+
+# Trusted setup
+snarkjs powersoftau new bn128 12 ptau.json
+snarkjs powersoftau contribute ptau.json --name="contrib" -v
+snarkjs powersoftau export ptau.json pot12_0000.ptau
+snarkjs groth16 setup eligibility.r1cs pot12_0000.ptau eligibility_0000.zkey</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="blockchain" class="mb-5">
+                    <h2>Blockchain Integration</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>Smart Contracts</h5>
+                            <ul>
+                                <li><code>Certificate.sol</code> - Issue and manage certificates</li>
+                                <li><code>PrivacyPreservingIdentity.sol</code> - ZK-based identity verification</li>
+                            </ul>
+                            
+                            <h5>Ethereum Integration</h5>
+                            <p>DIDs follow the ethr-did schema: <code>did:ethr:0x...</code></p>
+                            
+                            <h5>On-Chain Verification</h5>
+                            <p>ZK proofs can be verified on-chain using Solidity verifier contracts.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p>CertifyChain SSI - Research Paper Demo</p>
+            <p class="small">Privacy-Preserving AI-Driven SSI for Marginalized Populations</p>
+        </div>
+    </footer>
+</body>
+</html>
