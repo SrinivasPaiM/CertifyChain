@@ -1,0 +1,134 @@
+{% extends 'enhanced/base_enhanced.html' %}
+
+{% block title %}CertifyChain SSI API Documentation{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-hero {
+        background: linear-gradient(135deg, #0c1f54 0%, #1242a6 55%, #0f7fcf 100%);
+        color: #fff;
+        border-radius: 22px;
+        box-shadow: 0 18px 45px rgba(12, 32, 94, 0.3);
+    }
+
+    .flow-step {
+        border-left: 4px solid #1d4ed8;
+        background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+        border-radius: 12px;
+    }
+
+    .endpoint-table th {
+        white-space: nowrap;
+    }
+
+    .code-pill {
+        font-family: "Fira Code", "Cascadia Code", monospace;
+        background: #0f172a;
+        color: #dbeafe;
+        border-radius: 8px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.88rem;
+    }
+
+    .concept-card {
+        border: 1px solid #dbe5f4;
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 20px rgba(20, 40, 80, 0.07);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="docs-hero p-4 p-md-5 mb-4 fade-in-up">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center">
+        <div>
+            <span class="brand-pill mb-2">API v2.0</span>
+            <h1 class="display-6 fw-bold mb-2">{{ docs.title }}</h1>
+            <p class="lead mb-0">{{ docs.description }}</p>
+        </div>
+        <div>
+            <a class="btn btn-light btn-lg" href="?format=json">View Raw JSON</a>
+        </div>
+    </div>
+</section>
+
+<section class="panel p-4 mb-4 fade-in-up">
+    <h2 class="h4 fw-bold mb-3">Workflow</h2>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 1</h3>
+                <p class="mb-0">{{ docs.flow.step1 }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 2</h3>
+                <p class="mb-0">{{ docs.flow.step2 }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 3</h3>
+                <p class="mb-0">{{ docs.flow.step3 }}</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 4</h3>
+                <p class="mb-0">{{ docs.flow.step4 }}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="panel p-4 mb-4 fade-in-up">
+    <h2 class="h4 fw-bold mb-3">Endpoints</h2>
+    <div class="table-responsive">
+        <table class="table align-middle endpoint-table mb-0">
+            <thead>
+                <tr>
+                    <th>Path</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for path, purpose in docs.endpoints.items %}
+                <tr>
+                    <td><span class="code-pill">{{ path }}</span></td>
+                    <td>{{ purpose }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="row g-4 fade-in-up">
+    <div class="col-lg-8">
+        <div class="panel p-4 h-100">
+            <h2 class="h4 fw-bold mb-3">Key Concepts</h2>
+            <div class="row g-3">
+                {% for concept, explanation in docs.key_concepts.items %}
+                <div class="col-md-6">
+                    <div class="concept-card p-3 h-100">
+                        <h3 class="h6 fw-bold mb-1">{{ concept }}</h3>
+                        <p class="mb-0 text-muted">{{ explanation }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel p-4 h-100">
+            <h2 class="h4 fw-bold mb-3">Research</h2>
+            <p class="small text-uppercase text-muted mb-1">Paper</p>
+            <p class="fw-semibold mb-2">{{ docs.research_paper.title }}</p>
+            <p class="small text-uppercase text-muted mb-1">Conference</p>
+            <p class="mb-0">{{ docs.research_paper.conference }}</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

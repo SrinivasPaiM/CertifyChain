@@ -305,6 +305,16 @@ class ProjectRouteAndFlowTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertEqual(response.json()["service_type"], "HEALTHCARE")
 
+	def test_api_documentation_html_and_json_modes(self):
+		html_response = self.client.get(reverse("api_documentation"))
+		self.assertEqual(html_response.status_code, 200)
+		self.assertContains(html_response, "CertifyChain SSI API v2.0")
+		self.assertIn("text/html", html_response["Content-Type"])
+
+		json_response = self.client.get(reverse("api_documentation") + "?format=json")
+		self.assertEqual(json_response.status_code, 200)
+		self.assertEqual(json_response.json()["title"], "CertifyChain SSI API v2.0")
+
 
 class SmartContractSourceTests(SimpleTestCase):
 	def _read_contract(self, name):

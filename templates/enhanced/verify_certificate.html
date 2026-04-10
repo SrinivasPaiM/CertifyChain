@@ -45,6 +45,7 @@
 <script>
     const verifyForm = document.getElementById('verifyForm');
     const resultDiv = document.getElementById('result');
+    const certInput = verifyForm.querySelector('input[name="certificate_id"]');
 
     verifyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -101,6 +102,12 @@
         } catch (err) {
             resultDiv.innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
         }
+    }
+
+    const certIdFromUrl = new URLSearchParams(window.location.search).get('certificate_id');
+    if (certIdFromUrl) {
+        certInput.value = certIdFromUrl;
+        verifyForm.dispatchEvent(new Event('submit', { cancelable: true }));
     }
 </script>
 {% endblock %}

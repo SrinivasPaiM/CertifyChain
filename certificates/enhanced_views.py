@@ -419,5 +419,9 @@ def api_documentation(request):
             "conference": "International Blockchain Conference Prague 2026"
         }
     }
-    
-    return JsonResponse(docs)
+
+    wants_json = request.GET.get("format") == "json" or "application/json" in request.headers.get("Accept", "")
+    if wants_json:
+        return JsonResponse(docs)
+
+    return render(request, "enhanced/api_documentation.html", {"docs": docs})
