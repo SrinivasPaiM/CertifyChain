@@ -1,0 +1,126 @@
+{% extends 'enhanced/base_enhanced.html' %}
+
+{% block title %}API Documentation - CertifyChain SSI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-hero {
+        background: linear-gradient(135deg, #0c1f54 0%, #1242a6 55%, #0f7fcf 100%);
+        color: #fff;
+        border-radius: 22px;
+    }
+    .flow-step {
+        border-left: 4px solid #1d4ed8;
+        background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+        border-radius: 12px;
+    }
+    .code-pill {
+        font-family: "Fira Code", monospace;
+        background: #0f172a;
+        color: #dbeafe;
+        border-radius: 8px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.88rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="docs-hero p-4 p-md-5 mb-4 fade-in-up">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <span class="brand-pill mb-2">API v2.0</span>
+            <h1 class="display-6 fw-bold mt-3 mb-2">API Documentation</h1>
+            <p class="mb-0 opacity-75">CertifyChain SSI - Privacy-Preserving Identity API for Refugees</p>
+        </div>
+        <div>
+            <a class="btn btn-light btn-lg" href="?format=json">View JSON</a>
+        </div>
+    </div>
+</section>
+
+<section class="panel p-4 mb-4 fade-in-up">
+    <h2 class="h4 fw-bold mb-3">Workflow</h2>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 1</h3>
+                <p class="mb-0">Get certificate from admin (verified refugee status)</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 2</h3>
+                <p class="mb-0">Create DID using certificate ID at /ssi/create/</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 3</h3>
+                <p class="mb-0">Use AI matching at /services/match/ to find services</p>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="flow-step p-3 h-100">
+                <h3 class="h6 text-primary fw-bold">Step 4</h3>
+                <p class="mb-0">Generate ZK proof at /zk/proof/ to prove eligibility without revealing identity</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="panel p-4 mb-4 fade-in-up">
+    <h2 class="h4 fw-bold mb-3">API Endpoints</h2>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Path</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><span class="code-pill">/certificates/generate/</span></td><td>Admin: Issue certificate to refugee</td></tr>
+                <tr><td><span class="code-pill">/ssi/create/</span></td><td>Create DID from verified certificate</td></tr>
+                <tr><td><span class="code-pill">/services/match/</span></td><td>AI-powered service matching</td></tr>
+                <tr><td><span class="code-pill">/zk/proof/</span></td><td>Generate ZK proof for service eligibility</td></tr>
+                <tr><td><span class="code-pill">/services/request/</span></td><td>Request service access with ZK</td></tr>
+                <tr><td><span class="code-pill">/eligibility/verify/</span></td><td>Verify ZK proof (for service providers)</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel p-4 mb-4 fade-in-up">
+    <h2 class="h4 fw-bold mb-3">Zero-Knowledge Proofs</h2>
+    <p>ZK proofs allow refugees to prove eligibility WITHOUT revealing identity:</p>
+    
+    <h5>How It Works:</h5>
+    <ol>
+        <li>Refugee generates a commitment (hash) from their eligibility data</li>
+        <li>ZK circuit proves: "eligibility_score >= min_score" WITHOUT revealing actual score</li>
+        <li>Service provider only sees: proof is valid/invalid</li>
+        <li>They CANNOT see: name, ID, address, nationality, or exact eligibility score</li>
+    </ol>
+    
+    <h5>Public Signals (what verifier sees):</h5>
+    <ul>
+        <li><code>public_signals[0]</code> - Service type (0=healthcare, 1=education, etc.)</li>
+        <li><code>public_signals[1]</code> - Minimum score required</li>
+        <li><code>public_signals[2]</code> - Eligible (1) or not (0)</li>
+    </ul>
+    
+    <div class="alert alert-info mt-3">
+        <h5>🔧 Setting Up Real ZK Proofs (Optional)</h5>
+        <p>For production/research, install the ZK toolchain:</p>
+        <pre><code>npm install -g snarkjs
+# Install circom from https://github.com/iden3/circom</code></pre>
+    </div>
+</section>
+
+<section class="panel p-4 mb-4 fade-in-up">
+    <h2 class="h4 fw-bold mb-3">Research Paper</h2>
+    <p><strong>Title:</strong> Privacy-Preserving AI-Driven SSI for Marginalized Populations</p>
+    <p><strong>Conference:</strong> International Blockchain Conference Prague 2026</p>
+</section>
+{% endblock %}
