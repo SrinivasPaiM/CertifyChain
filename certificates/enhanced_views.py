@@ -278,6 +278,13 @@ def generate_zk_proof(request):
             "expiry": int(time.time()) + 3600
         }
         
+        # Create shareable proof (only ZK data, no personal info)
+        shareable_proof = {
+            "zk_proof": proof["zk_proof"],
+            "timestamp": proof["timestamp"],
+            "expiry": proof["expiry"]
+        }
+        
         # Save proof record
         ZKProofRecord.objects.create(
             refugee=profile,
@@ -292,12 +299,14 @@ def generate_zk_proof(request):
             "did": profile.did,
             "certificate_id": certificate_id,
             "proof": proof,
+            "shareable_proof": shareable_proof,
             "risk_flags": ai_result["risk_flags"],
             "explanation": {
                 "what": "You proved eligibility WITHOUT revealing your identity",
                 "how": "The ZK proof only shows you meet the criteria (score >= min_score)",
                 "privacy": "Service provider cannot see your name, ID, or personal details",
-                "verification": "They can verify the proof on-chain without knowing who you are"
+                "verification": "They can verify the proof on-chain without knowing who you are",
+                "warning": "IMPORTANT: Only share the 'shareable_proof' with service providers, NOT the full proof"
             }
         })
     
