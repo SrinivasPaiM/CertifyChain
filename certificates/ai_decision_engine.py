@@ -15,6 +15,8 @@ import hashlib
 import json
 from typing import Any, Dict, Iterable, List, Optional
 
+from .vector_matcher import ServiceVectorMatcher
+
 
 @dataclass(frozen=True)
 class ServicePolicy:
@@ -28,6 +30,9 @@ class ServicePolicy:
 
 class AIServiceDecisionEngine:
     """Explainable scoring engine for AI-assisted service matching."""
+
+    RULE_WEIGHT = 0.75
+    VECTOR_WEIGHT = 0.25
 
     # Tuned to keep scores interpretable and stable across deployments.
     BASE_SCORE = 40
@@ -46,7 +51,7 @@ class AIServiceDecisionEngine:
     }
 
     def __init__(self) -> None:
-        self.model_version = "1.1.0"
+        self.model_version = "2.0.0"
         self.policies: List[ServicePolicy] = [
             ServicePolicy(
                 service_id="health_001",
@@ -129,6 +134,7 @@ class AIServiceDecisionEngine:
                 documents_required=["id_document"],
             ),
         ]
+        self.vector_matcher = ServiceVectorMatcher(self.policies)
 
     @staticmethod
     def _normalize_skills(skills_text: str) -> List[str]:
@@ -264,26 +270,58 @@ class AIServiceDecisionEngine:
         """
         profile = self._build_profile(certificate)
         top_k = self._clamp_int(top_k, default=5, minimum=1, maximum=10)
+        similarity_by_service = self.vector_matcher.match_profile(profile, top_k=len(self.policies))
 
         recs: List[Dict] = []
         for policy in self.policies:
             scored = self._score_policy(policy, profile)
             if not scored["eligible"]:
                 continue
+
+            similarity = similarity_by_service.get(policy.service_id, 0.0)
+            vector_score = round(similarity * 100)
+            final_score = int(
+                round((scored["score"] * self.RULE_WEIGHT) + (vector_score * self.VECTOR_WEIGHT))
+            )
+            final_score = max(0, min(final_score, 100))
+
+            if final_score < policy.min_score:
+                continue
+
+            confidence = round(
+                min(0.99, 0.55 + (final_score / 200) + (0.05 * similarity)),
+                2,
+            )
+
+            reasons = list(scored["reasons"])
+            if similarity >= 0.8:
+                reasons.append("Strong semantic profile-service similarity detected")
+            elif similarity >= 0.65:
+                reasons.append("Moderate semantic profile-service similarity detected")
+
             recs.append(
                 {
                     "service_id": policy.service_id,
                     "service_name": policy.name,
                     "service_type": policy.service_type,
-                    "eligibility_score": scored["score"],
-                    "confidence": scored["confidence"],
+                    "eligibility_score": final_score,
+                    "confidence": confidence,
                     "min_score": policy.min_score,
                     "documents_required": policy.documents_required,
-                    "action_required": "Apply" if scored["score"] >= 70 else "Contact for info",
-                    "reasons": scored["reasons"],
+                    "action_required": "Apply" if final_score >= 70 else "Contact for info",
+                    "reasons": reasons,
                     "score_breakdown": {
                         "base_score": self.BASE_SCORE,
                         "min_required": policy.min_score,
+                        "rule_score": scored["score"],
+                        "semantic_similarity": round(similarity, 4),
+                        "semantic_score": vector_score,
+                        "final_score": final_score,
+                        "engine": {
+                            "rule_weight": self.RULE_WEIGHT,
+                            "vector_weight": self.VECTOR_WEIGHT,
+                            "vector_backend": self.vector_matcher.backend,
+                        },
                     },
                 }
             )
@@ -312,11 +350,17 @@ class AIServiceDecisionEngine:
             "certificate_id": certificate.certificate_id,
             "total_eligible": len(recs),
             "recommendations": recs[:top_k],
+            "all_recommendations": recs,
             "ai_model": {
                 "name": "ExplainablePolicyScoring-v1",
-                "type": "deterministic",
+                "type": "deterministic-hybrid",
                 "auditability": "high",
                 "version": self.model_version,
+                "matching": {
+                    "primary": "rule_scoring",
+                    "semantic": "cosine_similarity",
+                    "index": self.vector_matcher.backend,
+                },
             },
             "decision_hash": decision_hash,
             "profile_hash": profile_hash,
@@ -351,7 +395,8 @@ class AIServiceDecisionEngine:
     @staticmethod
     def find_service_recommendation(ai_result: Dict[str, Any], service_type: str) -> Optional[Dict[str, Any]]:
         stype = (service_type or "").upper()
-        for item in ai_result.get("recommendations", []):
+        candidates = ai_result.get("all_recommendations") or ai_result.get("recommendations", [])
+        for item in candidates:
             if item.get("service_type") == stype:
                 return item
         return None

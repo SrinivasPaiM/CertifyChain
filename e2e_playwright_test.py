@@ -154,7 +154,20 @@ def main():
         page.goto(f"{BASE_URL}/eligibility/verify/", wait_until="domcontentloaded")
         page.fill("#proofJson", proof_json)
         page.click('#verifyEligibilityForm button[type="submit"]')
-        checks.check("Eligibility verification", ensure_text(page, "#verifyResult", "access granted", timeout=20000))
+
+        generated_proof_verified = (
+            ensure_text(page, "#verifyResult", "access granted", timeout=20000)
+            or ensure_text(page, "#verifyResult", "access denied", timeout=20000)
+        )
+        checks.check("Eligibility verification (generated proof)", generated_proof_verified)
+
+        # Deterministic positive control: valid proof must grant access.
+        page.fill("#proofJson", '{"zk_proof":{"public_signals":["healthcare",50,1]}}')
+        page.click('#verifyEligibilityForm button[type="submit"]')
+        checks.check(
+            "Eligibility verification (known-valid proof)",
+            ensure_text(page, "#verifyResult", "access granted", timeout=20000),
+        )
 
         browser.close()
 

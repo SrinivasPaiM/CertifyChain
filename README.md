@@ -261,6 +261,21 @@ This suite covers:
 - certificate issuance
 - end-to-end SSI workflow through verification
 
+### Optional: enable FAISS acceleration for semantic matching
+
+The matcher now supports cosine similarity with optional FAISS indexing.
+
+- Default behavior: deterministic Python cosine matcher (no extra dependency required)
+- Accelerated behavior: FAISS inner-product index over normalized vectors
+
+Install FAISS in environments that support it:
+
+```powershell
+python -m pip install faiss-cpu numpy
+```
+
+If FAISS is not available for your Python/OS build, the app automatically falls back to Python cosine.
+
 ## 10) Core Data Models
 
 In certificates/models.py:

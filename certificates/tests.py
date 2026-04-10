@@ -9,6 +9,7 @@ from django.urls import reverse
 
 from .ai_decision_engine import AIServiceDecisionEngine
 from .models import Certificate, RefugeeProfile, ZKProofRecord
+from .vector_matcher import ServiceVectorMatcher
 
 
 class AIServiceDecisionEngineTests(SimpleTestCase):
@@ -40,7 +41,8 @@ class AIServiceDecisionEngineTests(SimpleTestCase):
 		self.assertEqual(len(result["decision_hash"]), 64)
 		self.assertEqual(len(result["profile_hash"]), 64)
 		self.assertEqual(result["ai_model"]["name"], "ExplainablePolicyScoring-v1")
-		self.assertEqual(result["ai_model"]["version"], "1.1.0")
+		self.assertEqual(result["ai_model"]["version"], "2.0.0")
+		self.assertEqual(result["ai_model"]["matching"]["semantic"], "cosine_similarity")
 		self.assertGreaterEqual(result["total_eligible"], 1)
 
 	def test_new_arrival_boosts_housing_likelihood(self):
@@ -103,7 +105,7 @@ class AIServiceDecisionEngineTests(SimpleTestCase):
 		result = self.engine.recommend(cert)
 
 		health = self.engine.find_service_recommendation(result, "healthcare")
-		missing = self.engine.find_service_recommendation(result, "legal_aid")
+		missing = self.engine.find_service_recommendation(result, "cash_assistance")
 
 		self.assertIsNotNone(health)
 		self.assertEqual(health["service_type"], "HEALTHCARE")
@@ -153,6 +155,8 @@ class AIWorkflowIntegrationTests(TestCase):
 		self.assertIn("decision_hash", payload)
 		self.assertIn("profile_hash", payload)
 		self.assertIn("risk_flags", payload)
+		self.assertIn("matching", payload["ai_model"])
+		self.assertEqual(payload["ai_model"]["matching"]["semantic"], "cosine_similarity")
 		self.assertLessEqual(len(payload["recommendations"]), 3)
 
 		profile = RefugeeProfile.objects.get(certificate=self.certificate)
@@ -332,3 +336,41 @@ class SmartContractSourceTests(SimpleTestCase):
 		self.assertIn("function registerIdentity", source)
 		self.assertIn("function submitEligibilityProof", source)
 		self.assertIn("function verifyEligibility", source)
+
+
+class VectorMatcherTests(SimpleTestCase):
+	def setUp(self):
+		self.engine = AIServiceDecisionEngine()
+		self.matcher = ServiceVectorMatcher(self.engine.policies)
+
+	def test_match_profile_returns_scores_for_all_services(self):
+		profile = {
+			"age": 28,
+			"employment_status": "unemployed",
+			"family_size": 5,
+			"has_children": True,
+			"language_proficiency": 2,
+			"time_since_arrival": 1,
+			"special_needs": False,
+			"skills_count": 3,
+		}
+		results = self.matcher.match_profile(profile, top_k=len(self.engine.policies))
+
+		self.assertEqual(len(results), len(self.engine.policies))
+		self.assertTrue(all(0.0 <= score <= 1.0 for score in results.values()))
+
+	def test_match_profile_is_deterministic(self):
+		profile = {
+			"age": 34,
+			"employment_status": "unemployed",
+			"family_size": 2,
+			"has_children": False,
+			"language_proficiency": 3,
+			"time_since_arrival": 8,
+			"special_needs": True,
+			"skills_count": 4,
+		}
+		first = self.matcher.match_profile(profile, top_k=5)
+		second = self.matcher.match_profile(profile, top_k=5)
+
+		self.assertEqual(first, second)
