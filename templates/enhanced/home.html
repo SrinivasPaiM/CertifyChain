@@ -17,8 +17,8 @@
                     and verifiable identity sharing with AI-driven public service systems.
                 </p>
                 <div class="d-flex gap-3">
-                    <a href="/ssi/" class="btn btn-warning btn-lg">Get Started</a>
-                    <a href="/api/docs/" class="btn btn-outline-light btn-lg">API Docs</a>
+                    <a href="{% url 'ssi_dashboard' %}" class="btn btn-warning btn-lg">Get Started</a>
+                    <a href="{% url 'api_documentation' %}" class="btn btn-outline-light btn-lg">API Docs</a>
                 </div>
                 <div class="mt-4">
                     <span class="zk-badge me-2">🔐 Zero-Knowledge Proofs</span>
@@ -26,11 +26,11 @@
                 </div>
             </div>
             <div class="col-lg-5">
-                <div class="card p-4 shadow-lg">
+                <div class="panel p-4 shadow-lg">
                     <h4 class="mb-3">How It Works</h4>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-primary rounded-circle p-2 me-3" style="width:40px;height:40px;">1</div>
-                        <div><strong>Create Identity</strong><p class="mb-0 small">Register your DID</p></div>
+                        <div><strong>Create Identity</strong><p class="mb-0 small">Register DID from verified certificate</p></div>
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-primary rounded-circle p-2 me-3" style="width:40px;height:40px;">2</div>
@@ -42,7 +42,7 @@
                     </div>
                     <div class="d-flex align-items-center">
                         <div class="bg-primary rounded-circle p-2 me-3" style="width:40px;height:40px;">4</div>
-                        <div><strong>Access Services</strong><p class="mb-0 small">Seamlessly access public services</p></div>
+                        <div><strong>Access Services</strong><p class="mb-0 small">Request services and verifier approval</p></div>
                     </div>
                 </div>
             </div>
@@ -55,21 +55,21 @@
         <h2 class="text-center mb-5 fw-bold">Key Features</h2>
         <div class="row g-4">
             <div class="col-md-4">
-                <div class="feature-card card h-100 p-4">
+                <div class="feature-card h-100 p-4">
                     <div class="mb-3"><span class="zk-badge">ZK-Proof</span></div>
                     <h4>Privacy-First</h4>
                     <p>Prove eligibility WITHOUT revealing identity, location, or personal details using zero-knowledge cryptography.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card card h-100 p-4">
+                <div class="feature-card h-100 p-4">
                     <div class="mb-3"><span class="ai-badge">AI-Powered</span></div>
                     <h4>Smart Matching</h4>
                     <p>AI analyzes your profile to recommend relevant public services - healthcare, education, employment, housing.</p>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card card h-100 p-4">
+                <div class="feature-card h-100 p-4">
                     <div class="mb-3"><span class="badge bg-secondary">Blockchain</span></div>
                     <h4>Self-Sovereign</h4>
                     <p>You own your identity. No central authority can revoke or track your credentials. Your data stays with you.</p>

@@ -1,4 +1,5 @@
 from django import forms
+import re
 
 class IssueCertificateForm(forms.Form):
     transaction_hash = forms.CharField(
@@ -46,3 +47,15 @@ class IssueCertificateForm(forms.Form):
     time_since_arrival = forms.IntegerField(label='Months Since Arrival', min_value=1, initial=1, required=False,
                                              help_text='How many months ago did you arrive in this country?')
     special_needs = forms.BooleanField(label='Special Needs', required=False, initial=False)
+
+    def clean_recipient_address(self):
+        value = (self.cleaned_data.get('recipient_address') or '').strip()
+        if not re.fullmatch(r"0x[a-fA-F0-9]{40}", value):
+            raise forms.ValidationError("Enter a valid Ethereum address (0x + 40 hex characters).")
+        return value
+
+    def clean_transaction_hash(self):
+        value = (self.cleaned_data.get('transaction_hash') or '').strip()
+        if not re.fullmatch(r"0x[a-fA-F0-9]{64}", value):
+            raise forms.ValidationError("Enter a valid transaction hash (0x + 64 hex characters).")
+        return value
