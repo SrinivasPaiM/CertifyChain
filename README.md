@@ -36,7 +36,7 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 
-# Tests
+# Run tests
 python manage.py test
 ```
 
@@ -63,18 +63,6 @@ Ganache runs at: http://127.0.0.1:7545
 If the contract address in `certificates/views.py` differs from your deployment, update it:
 ```python
 contract_address = "YOUR_DEPLOYED_CONTRACT_ADDRESS"
-```
-
-## Setup
-
-```powershell
-cd c:\Project\refugee\CertifyChain
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
 ```
 
 Open http://127.0.0.1:8000/
@@ -165,11 +153,31 @@ ZK Proof:    "I am eligible"      → Shows ONLY "eligible"
 
 ## Testing
 
+### Django Tests
 ```powershell
 python manage.py test
 ```
 
-## Troubleshooting
+### Browser E2E Tests (Playwright)
+Install once:
+```powershell
+python -m pip install playwright
+python -m playwright install chromium
+```
+
+Run:
+```powershell
+python e2e_playwright_test.py
+```
+
+This suite covers:
+- Page availability
+- API docs HTML/JSON behavior
+- Login
+- Certificate issuance
+- End-to-end SSI workflow through verification
+
+### Troubleshooting
 
 ### Form error: invalid transaction_hash
 - Must be 0x + 64 hex characters
