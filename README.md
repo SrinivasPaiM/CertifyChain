@@ -1,13 +1,29 @@
 # CertifyChain (Refugee Certificate System) - v2.0
 
-CertifyChain is a Django-based SSI framework for issuing refugee certificates and using them in a privacy-preserving identity flow with zero-knowledge proofs.
+CertifyChain is a blockchain-based SSI framework for **verifying refugees and issuing certificates** in a privacy-preserving manner. Refugees can prove eligibility for services WITHOUT revealing their identity using **zero-knowledge proofs**.
 
-## Features
-- Certificate issuance by authenticated staff (with blockchain transaction hash)
-- DID creation tied to a verified certificate
-- Explainable AI service matching
-- ZK-style eligibility proof generation and verification
-- API docs and JSON endpoints
+## Why CertifyChain?
+- **Privacy-First**: Zero-knowledge proofs allow refugees to prove eligibility without revealing name, ID, address, or nationality
+- **Self-Sovereign Identity**: Refugees own their identity - no central authority can revoke or track their credentials
+- **AI-Powered Matching**: Smart matching recommends relevant services based on verified profile data
+- **Blockchain-Verified**: Certificates are anchored with transaction hashes for auditability
+
+## Tech Stack
+- Python 3.10+ / Django 5.2
+- SQLite (default database)
+- Web3.py (blockchain integration)
+- Remix + Ganache (local blockchain for development)
+- ReportLab + qrcode (PDF and QR generation)
+- Circom + Snarkjs (ZK proofs - optional for real proofs)
+
+## Project Structure
+```
+manage.py                    # Django entry point
+certificates/                # Core app (models, views, tests)
+templates/                   # HTML templates
+zk-circuits/                 # ZK circuit files
+contracts/                   # Solidity smart contracts
+```
 
 ## Quick Commands
 
@@ -20,47 +36,41 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 
-# Run app
-python manage.py runserver
-
 # Tests
 python manage.py test
 ```
 
-## Tech Stack
-- Python 3.10+ / Django 5.2
-- SQLite (default)
-- Web3.py (for blockchain transaction hashes)
-- ReportLab + qrcode (PDF and QR generation)
-- Optional: Playwright (E2E tests), FAISS (semantic matching)
+## Local Blockchain Setup (Required for Transaction IDs)
 
-## Project Structure
+Since this is a proof-of-concept without connecting to mainnet, use Ganache + Remix locally:
+
+### 1. Start Ganache
+```powershell
+# Install Ganache or use CLI
+ganache-cli --deterministic
+# Or download Ganache desktop app and start it
 ```
-manage.py                    # Django entry point
-certificates/                # Core app (models, views, tests)
-templates/                   # HTML templates
-zk-circuits/                 # ZK circuit files
-contracts/                   # Solidity smart contracts
+Ganache runs at: http://127.0.0.1:7545
+
+### 2. Deploy Smart Contract
+1. Open **Remix IDE** (https://remix.ethereum.org)
+2. Load the contract file: `contracts/Certificate.sol`
+3. Compile the contract
+4. Deploy to "Dev - Ganache" (or HTTP provider at http://127.0.0.1:7545)
+5. Copy the **transaction hash** from the deployment (starts with 0x...)
+
+### 3. Update Contract Address (if needed)
+If the contract address in `certificates/views.py` differs from your deployment, update it:
+```python
+contract_address = "YOUR_DEPLOYED_CONTRACT_ADDRESS"
 ```
 
 ## Setup
 
-### Windows
 ```powershell
 cd c:\Project\refugee\CertifyChain
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-### macOS/Linux
-```bash
-cd /path/to/CertifyChain
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
@@ -75,30 +85,50 @@ Open http://127.0.0.1:8000/
 1. Create superuser: `python manage.py createsuperuser`
 2. Login at `/accounts/login/`
 
-### Step 2: Issue Certificate
-Go to `/certificates/generate/` (requires login)
+### Step 2: Issue Certificate (Requires Blockchain)
+Go to `/certificates/generate/` (requires admin login)
 
-**Required fields:**
-- `recipient_address`: 0x + 40 hex chars (e.g., `0x1111111111111111111111111111111111111111`)
-- `transaction_hash`: 0x + 64 hex chars (from blockchain deployment)
+**Important - Blockchain fields:**
+- `recipient_address`: Ethereum address (0x + 40 hex chars)
+- `transaction_hash`: From Remix/Ganache deployment (0x + 64 hex chars)
+
+Example values for testing:
+- `recipient_address`: 0x1111111111111111111111111111111111111111
+- `transaction_hash`: 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 After submit, you'll receive a certificate ID (e.g., `REF-ABC-1712750000`).
 
-### Step 3: Verify & Create DID
+**Why blockchain?** The transaction hash anchors the certificate to an immutable on-chain event, providing auditability.
+
+### Step 3: Verify Certificate & Create DID
 - Verify certificate: `/ssi/verify/`
 - Create DID: `/ssi/create/`
 
-### Step 4: AI Service Matching
-Use `/services/match/` with your certificate ID to get eligible services with scores.
+The DID (`did:ethr:0x...`) is your self-sovereign identity for service interactions.
 
-### Step 5: Generate ZK Proof
+### Step 4: AI Service Matching
+Use `/services/match/` with your certificate ID.
+
+The AI analyzes your profile and recommends eligible services with scores and confidence levels.
+
+### Step 5: Generate ZK Proof (Privacy Protection)
 Use `/zk/proof/` to prove eligibility WITHOUT revealing identity.
 
-**Important:** Copy the "SHAREABLE PROOF" to share with service providers - it contains NO personal data.
+**Key Feature:** You'll see two proofs:
+- **Shareable Proof** - Safe to send to service providers (contains ONLY ZK proof data)
+- **Full Proof** - Keep private (contains your commitment and DID)
 
-### Step 6: Verify / Apply
-- Apply for service: `/services/request/`
-- Verify eligibility: `/eligibility/verify/` or `/eligibility/verify/page/`
+The shareable proof proves "I am eligible for healthcare" WITHOUT revealing:
+- Your name
+- Your ID number
+- Your address
+- Your nationality
+
+### Step 6: Verify / Apply for Service
+- Apply: `/services/request/`
+- Verify: `/eligibility/verify/` (API) or `/eligibility/verify/page/` (Web)
+
+Service providers can verify the proof on-chain without knowing who you are.
 
 ## Routes
 
@@ -118,6 +148,21 @@ Use `/zk/proof/` to prove eligibility WITHOUT revealing identity.
 | `/admin/` | Django Admin |
 | `/accounts/login/` | Login |
 
+## Security: How ZK Proofs Protect Privacy
+
+Zero-knowledge proofs allow you to prove something is true WITHOUT revealing the underlying data:
+
+```
+Traditional: "Here is my ID card" → Shows EVERYTHING
+ZK Proof:    "I am eligible"      → Shows ONLY "eligible"
+```
+
+**Example:**
+- You need healthcare but don't want to reveal you're a refugee
+- Generate ZK proof: "I have eligibility_score >= 50"
+- Service provider sees: "✅ Eligible for healthcare"
+- Service provider DOES NOT see: Your name, ID, address, or why you're eligible
+
 ## Testing
 
 ```powershell
@@ -126,27 +171,36 @@ python manage.py test
 
 ## Troubleshooting
 
-### Form error: invalid transaction_hash or recipient_address
-- `recipient_address`: must be 0x + 40 hex characters
-- `transaction_hash`: must be 0x + 64 hex characters
+### Form error: invalid transaction_hash
+- Must be 0x + 64 hex characters
+- Get this from Remix deployment or Ganache transaction
+
+### Form error: invalid recipient_address
+- Must be 0x + 40 hex characters
+- Use an address from Ganache accounts
 
 ### Login fails
 Run: `python manage.py createsuperuser`
 
 ### Port in use
-Use: `python manage.py runserver 8001`
+Run: `python manage.py runserver 8001`
 
 ## Core Data Models
 
-- **Certificate**: issued certificate + AI profile fields
+- **Certificate**: Issued certificate + profile fields for AI matching
 - **RefugeeProfile**: DID linked to certificate
-- **ServiceEligibility**: recommendation results
-- **ZKProofRecord**: generated proof audit trail
+- **ServiceEligibility**: Recommendation results
+- **ZKProofRecord**: Generated proof audit trail
 
 ## Security Note
 
-Current setup is for local development (DEBUG=True, SQLite). Before production: set DEBUG=False, configure SECRET_KEY, ALLOWED_HOSTS, use production database, and add TLS.
+Current setup is for local development (DEBUG=True, SQLite). Before production deployment:
+- Set DEBUG=False
+- Configure SECRET_KEY and ALLOWED_HOSTS
+- Use production database (PostgreSQL recommended)
+- Add TLS/HTTPS
+- Review authentication/authorization
 
 ---
 
-For questions or contributions, open an issue on GitHub.
+**Research Paper Context:** This system demonstrates privacy-preserving SSI for marginalized populations. The ZK proof architecture allows refugees to access public services while protecting their identity.
