@@ -1,0 +1,115 @@
+{% extends 'enhanced/base_enhanced.html' %}
+
+{% block title %}Verify Eligibility - CertifyChain SSI{% endblock %}
+
+{% block content %}
+<section class="hero-gradient p-4 p-md-5 mb-4 fade-in-up">
+    <h1 class="display-6 fw-bold mb-2">Verify Eligibility</h1>
+    <p class="mb-0 opacity-75">Service providers can verify refugee eligibility using ZK proofs without seeing personal data.</p>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="panel p-4 fade-in-up">
+            <h5 class="fw-bold mb-3">Verify ZK Proof</h5>
+            <div class="alert alert-info">
+                <strong>For Service Providers:</strong> Paste the ZK proof JSON to verify eligibility without seeing personal data.
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">ZK Proof JSON</label>
+                <textarea class="form-control" id="proofInput" rows="10" placeholder='{"zk_proof": {"public_signals": [0, 50, 1]}}'></textarea>
+            </div>
+            
+            <button type="button" class="btn btn-brand w-100" onclick="verifyProof()">Verify Eligibility</button>
+            
+            <div class="mt-4" id="verifyResult">
+                <div class="text-muted">Enter ZK proof JSON to verify eligibility.</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="panel p-4 fade-in-up">
+            <h5 class="fw-bold mb-3">Verification API</h5>
+            <p>Or use the API endpoint directly:</p>
+            <pre class="bg-light p-3"><code>POST /eligibility/verify/
+Content-Type: application/json
+
+{
+  "proof": {
+    "zk_proof": {
+      "public_signals": [0, 50, 1]
+    }
+  }
+}</code></pre>
+            <p class="mt-2"><strong>Response:</strong></p>
+            <pre class="bg-light p-3"><code>{
+  "valid": true,
+  "message": "Eligibility verified - access granted",
+  "privacy_preserved": true
+}</code></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function verifyProof() {
+        const proofText = document.getElementById('proofInput').value;
+        const resultDiv = document.getElementById('verifyResult');
+        
+        if (!proofText.trim()) {
+            resultDiv.innerHTML = '<div class="alert alert-warning">Please enter the ZK proof JSON</div>';
+            return;
+        }
+        
+        resultDiv.innerHTML = '<div class="alert alert-info">Verifying...</div>';
+        
+        try {
+            const proof = JSON.parse(proofText);
+            const response = await fetch('/eligibility/verify/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({proof})
+            });
+            
+            const result = await response.json();
+            
+            if (result.valid) {
+                let html = '<div class="alert alert-success">';
+                html += '<h4>✅ Eligibility Verified!</h4>';
+                html += '<p>' + result.message + '</p>';
+                html += '</div>';
+                
+                html += '<div class="card mt-3">';
+                html += '<div class="card-header">What Was Verified</div>';
+                html += '<div class="card-body">';
+                html += '<ul>';
+                html += '<li><strong>Service Type:</strong> ' + getServiceName(result.what_verified?.service_type) + '</li>';
+                html += '<li><strong>Minimum Score:</strong> ' + result.what_verified?.min_score + '</li>';
+                html += '<li><strong>Eligible:</strong> ' + (result.what_verified?.eligible ? 'Yes' : 'No') + '</li>';
+                html += '</ul>';
+                html += '</div></div>';
+                
+                html += '<div class="alert alert-info mt-3">';
+                html += '<strong>🔒 Privacy Preserved:</strong> The verifier knows ONLY that the person is eligible for the service. No personal information was revealed.';
+                html += '</div>';
+                
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><h4>❌ Invalid Proof</h4><p>' + result.message + '</p></div>';
+            }
+            
+        } catch (error) {
+            resultDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+        }
+    }
+    
+    function getServiceName(type) {
+        const names = ['Healthcare', 'Education', 'Employment', 'Housing', 'Legal Aid', 'Food Assistance'];
+        return names[type] || 'Unknown';
+    }
+</script>
+{% endblock %}
