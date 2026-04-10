@@ -41,13 +41,6 @@
 
 {% block extra_js %}
 <script>
-    function copyProof() {
-        if (window.proofData) {
-            navigator.clipboard.writeText(JSON.stringify(window.proofData, null, 2));
-            alert('SHAREABLE PROOF copied! This is safe to send to service providers.');
-        }
-    }
-    
     const zkForm = document.getElementById('zkForm');
     const zkResult = document.getElementById('zkResult');
 
@@ -62,7 +55,7 @@
         zkResult.innerHTML = '<div class="alert alert-info">Generating proof...</div>';
 
         try {
-            const response = await fetch('/zk/proof/', {
+            const response = await fetch('{% url "generate_zk_proof" %}', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
@@ -77,62 +70,20 @@
             let html = '<div class="alert alert-success"><strong>ZK proof generated successfully</strong></div>';
             html += '<p><strong>Refugee:</strong> ' + result.refugee_name + '</p>';
             html += '<p><strong>DID:</strong> <code>' + result.did + '</code></p>';
-            if (result.proof.ai_decision_hash) {
-                html += '<p><strong>AI Decision Hash:</strong> <code>' + result.proof.ai_decision_hash + '</code></p>';
-            }
+            html += '<p><strong>AI Decision Hash:</strong> <code>' + result.proof.ai_decision_hash + '</code></p>';
             if (result.risk_flags && result.risk_flags.length) {
                 html += '<p><strong>Risk Flags:</strong> ' + result.risk_flags.join(', ') + '</p>';
             }
-            
-            html += '<div class="alert alert-warning mt-3">';
-            html += '<h6>🔒 Privacy Protection:</h6>';
-            html += '<p class="mb-0"><strong>What you proved:</strong> "' + data.service_type + '" eligibility</p>';
-            html += '<p class="mb-0"><strong>What the service provider CAN see:</strong> Only that your ZK proof is valid</p>';
-            html += '<p class="mb-0"><strong>What they CANNOT see:</strong> Your name, ID, address, nationality, or any personal details!</p>';
-            html += '</div>';
-            
-            if (result.proof.mode === 'real_zk') {
-                html += '<div class="alert alert-success mt-3">';
-                html += '<strong>✅ REAL ZK Proof Generated!</strong> Using snarkjs + circom';
-                html += '</div>';
-            } else if (result.proof.mode === 'mock_circuits_not_ready') {
-                html += '<div class="alert alert-warning mt-3">';
-                html += '<strong>⚠️ snarkjs installed but circuits not compiled.</strong> Running in demo mode.';
-                html += '</div>';
-            } else {
-                html += '<div class="alert alert-secondary mt-3">';
-                html += '<strong>⚠️ Demo Mode:</strong> Mock ZK proof. For real proofs, install snarkjs.';
-                html += '</div>';
-            }
-            
-            html += '<div class="alert alert-danger mt-3">';
-            html += '<strong>⚠️ IMPORTANT: Copy the SHAREABLE PROOF below, NOT the full proof!</strong>';
-            html += '</div>';
-            
-            html += '<div class="bg-light p-3 rounded mt-2">';
-            html += '<small><strong>📤 SHARE WITH SERVICE PROVIDER (safe to share):</strong></small>';
-            html += '<pre class="mt-2" style="font-size:10px;">' + JSON.stringify(result.shareable_proof, null, 2) + '</pre>';
-            html += '</div>';
-            
-            html += '<div class="bg-light p-3 rounded mt-3" style="opacity: 0.7;">';
-            html += '<small><strong>🔐 FULL PROOF (keep private):</strong></small>';
-            html += '<pre class="mt-2" style="font-size:10px;">' + JSON.stringify(result.proof, null, 2) + '</pre>';
-            html += '</div>';
-            
-            html += '<div class="mt-3 text-center">';
-            html += '<button class="btn btn-outline-primary btn-sm" onclick="copyProof()">📋 Copy SHAREABLE Proof</button>';
-            html += '<a href="/eligibility/verify/page/" class="btn btn-outline-success btn-sm ms-2">🔍 Verify This Proof</a>';
-            html += '</div>';
-
             html += '<div class="feature-card p-3 mt-3">';
             html += '<p class="mb-1"><strong>Privacy:</strong> ' + result.explanation.privacy + '</p>';
             html += '<p class="mb-0"><strong>Verification:</strong> ' + result.explanation.verification + '</p>';
             html += '</div>';
-            
+            html += '<div class="mt-3">';
+            html += '<a class="btn btn-brand me-2" href="{% url "request_service" %}?certificate_id=' + encodeURIComponent(data.certificate_id) + '&service_type=' + encodeURIComponent(data.service_type) + '">Request Service</a>';
+            html += '<a class="btn btn-outline-primary" href="{% url "verify_eligibility" %}">Verifier Portal</a>';
+            html += '</div>';
+            html += '<details class="mt-3"><summary>Proof JSON</summary><pre class="small mt-2">' + JSON.stringify(result.proof, null, 2) + '</pre></details>';
             zkResult.innerHTML = html;
-            
-            window.proofData = result.shareable_proof;
-            
         } catch (err) {
             zkResult.innerHTML = '<div class="alert alert-danger">Request failed: ' + err.message + '</div>';
         }
